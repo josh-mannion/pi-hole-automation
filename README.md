@@ -52,8 +52,11 @@ Install & Setup
 ---------------
 
 git clone <repo_url>
+
 cd pi-hole-automation
+
 cd setup
+
 bash initial_setup.sh
 
 
