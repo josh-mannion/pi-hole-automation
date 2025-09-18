@@ -1,0 +1,26 @@
+{
+  "telegram": {
+    "bot_token": "",
+    "chat_id": ""
+  },
+  "paths": {
+    "base_dir": "./",
+    "venv_dir": "venv",
+    "requirements_file": "setup/requirements.txt",
+    "down_alert": {
+      "logs": "down_alert/logs",
+      "state": "down_alert/state",
+      "script": "down_alert/scripts/down_alert.py"
+    },
+    "maintenance": {
+      "logs": "maintenance/logs",
+      "state": "maintenance/state",
+      "script": "maintenance/scripts/maintenance.py"
+    },
+    "monitor": {
+      "logs": "monitor/logs",
+      "state": "monitor/state",
+      "script": "monitor/scripts/monitor.py"
+    }
+  }
+}
