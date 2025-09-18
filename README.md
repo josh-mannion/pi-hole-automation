@@ -16,6 +16,7 @@ Note: Telegram bot is optional.
 
 Directory Structure
 -------------------
+```text
 pi-hole-automation/
 ├── README.md                 # Project overview and instructions
 ├── setup/                    # Setup and installation scripts
