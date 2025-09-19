@@ -1,6 +1,6 @@
 #!/bin/bash
 # -------------------------
-# Run Monitor Module & Setup Bot Autostart
+# Run Monitor Module & Ensure Bot Runs in Background (with auto-restart)
 # -------------------------
 
 set -euo pipefail
@@ -46,54 +46,43 @@ else
 fi
 
 # -------------------------
-# Run the monitor script
+# Run the monitor script once
+log "Running monitor.py..."
 "$VENV_DIR/bin/python" "$SCRIPT_PATH" --config "$CONFIG_FILE" "$@"
-
-log "=== Finished Monitor Module ==="
+log "Finished monitor.py run."
 
 # -------------------------
-# Setup systemd service for bot if not already exists
-SERVICE_FILE="/etc/systemd/system/monitor_bot.service"
-if [[ ! -f "$SERVICE_FILE" ]]; then
-    sudo bash -c "cat > $SERVICE_FILE" <<EOL
-[Unit]
-Description=Pi-hole Monitor Telegram Bot
-After=network.target
-
-[Service]
-User=$(whoami)
-WorkingDirectory=$BASE_DIR
-ExecStart=$VENV_DIR/bin/python $BOT_SCRIPT --config $CONFIG_FILE
-Restart=always
-RestartSec=10
-Environment="PATH=$VENV_DIR/bin:/usr/bin:/bin"
-StandardOutput=append:$BOT_LOG_FILE
-StandardError=append:$BOT_LOG_FILE
-
-[Install]
-WantedBy=multi-user.target
-EOL
-
-    # Reload systemd, enable and start the service
-    sudo systemctl daemon-reload
-    sudo systemctl enable monitor_bot.service
-    sudo systemctl start monitor_bot.service
-    log "Monitor bot systemd service created, enabled, and started."
-else
-    log "Monitor bot systemd service already exists."
+# Stop any existing monitor_bot.py
+if pgrep -f "$BOT_SCRIPT" > /dev/null; then
+    log "Stopping existing monitor_bot.py..."
+    pkill -f "$BOT_SCRIPT" || true
+    sleep 2
 fi
+
+# -------------------------
+# Run monitor_bot.py in the background with auto-restart
+log "Starting monitor_bot.py in background..."
+nohup bash -c "
+    while true; do
+        echo \"\$(date '+%Y-%m-%d %H:%M:%S') - Starting monitor_bot.py...\" >> \"$BOT_LOG_FILE\"
+        \"$VENV_DIR/bin/python\" \"$BOT_SCRIPT\" --config \"$CONFIG_FILE\" >> \"$BOT_LOG_FILE\" 2>&1
+        echo \"\$(date '+%Y-%m-%d %H:%M:%S') - monitor_bot.py crashed or exited. Restarting in 5s...\" >> \"$BOT_LOG_FILE\"
+        sleep 5
+    done
+" >/dev/null 2>&1 &
+log "monitor_bot.py wrapper started in background with PID $!"
 
 # -------------------------
 # Cronjob (every minute) for monitor.py
 CRON_SCHEDULE="* * * * *"
 CRON_CMD="$VENV_DIR/bin/python $SCRIPT_PATH --config $CONFIG_FILE"
-
-# Add cron if it does not already exist
 (crontab -l 2>/dev/null | grep -F -q "$CRON_CMD") || {
     (crontab -l 2>/dev/null; echo "$CRON_SCHEDULE $CRON_CMD") | crontab -
-    log "Cron job added: runs monitor every minute"
+    log "Cron job added: runs monitor.py every minute"
 }
 
 # -------------------------
 # Deactivate virtualenv
 deactivate
+log "=== Monitor Module Completed ==="
+

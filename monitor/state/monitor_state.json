@@ -1,0 +1,15 @@
+{
+  "metrics": {
+    "cpu": 1.0,
+    "ram": 26.6,
+    "disk": 21.1,
+    "temp": 47.7
+  },
+  "alerts": {
+    "cpu": false,
+    "ram": false,
+    "disk": false,
+    "temp": false
+  },
+  "last_check": "2025-09-19 16:24:03"
+}
